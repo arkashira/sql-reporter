@@ -1,50 +1,42 @@
-from sql_reporter import SQLReporter, QueryResult
+from sql_reporter import SQLReporter, Report
 
-def test_execute_query():
-    dataset = {
-        'users': [
-            {'id': '1', 'name': 'John', 'age': '30'},
-            {'id': '2', 'name': 'Jane', 'age': '25'}
-        ]
-    }
-    reporter = SQLReporter(dataset)
-    query = 'SELECT * FROM users'
-    result = reporter.execute_query(query)
-    assert result.columns == ['id', 'name', 'age']
-    assert result.rows == [['1', 'John', '30'], ['2', 'Jane', '25']]
+def test_create_report():
+    reporter = SQLReporter()
+    report = reporter.create_report("Test Report", "SELECT * FROM test_table", "daily")
+    assert report.id == 1
+    assert report.name == "Test Report"
+    assert report.query == "SELECT * FROM test_table"
+    assert report.schedule == "daily"
 
-def test_execute_query_invalid_table():
-    dataset = {
-        'users': [
-            {'id': '1', 'name': 'John', 'age': '30'},
-            {'id': '2', 'name': 'Jane', 'age': '25'}
-        ]
-    }
-    reporter = SQLReporter(dataset)
-    query = 'SELECT * FROM invalid_table'
+def test_schedule_report():
+    reporter = SQLReporter()
+    report = reporter.create_report("Test Report", "SELECT * FROM test_table", "daily")
+    scheduled_report = reporter.schedule_report(report.id, "weekly")
+    assert scheduled_report.id == report.id
+    assert scheduled_report.name == report.name
+    assert scheduled_report.query == report.query
+    assert scheduled_report.schedule == "weekly"
+
+def test_execute_report():
+    reporter = SQLReporter()
+    report = reporter.create_report("Test Report", "SELECT * FROM test_table", "daily")
+    result = reporter.execute_report(report.id)
+    assert result["report_id"] == report.id
+    assert result["query"] == report.query
+    assert result["result"] == "Report executed successfully"
+
+def test_optimize_report_execution():
+    reporter = SQLReporter()
+    report = reporter.create_report("Test Report", "SELECT * FROM test_table", "daily")
+    result = reporter.optimize_report_execution(report.id)
+    assert result["report_id"] == report.id
+    assert result["query"] == report.query
+    assert result["result"] == "Report execution optimized"
+
+def test_report_not_found():
+    reporter = SQLReporter()
     try:
-        reporter.execute_query(query)
-        assert False, 'Expected ValueError'
+        reporter.execute_report(1)
+        assert False
     except ValueError as e:
-        assert str(e) == 'Table not found'
-
-def test_format_result():
-    result = QueryResult(['id', 'name', 'age'], [['1', 'John', '30'], ['2', 'Jane', '25']])
-    reporter = SQLReporter({})
-    formatted_result = reporter.format_result(result)
-    assert formatted_result == 'id\tname\tage\n1\tJohn\t30\n2\tJane\t25\n'
-
-def test_execute_query_invalid_query():
-    dataset = {
-        'users': [
-            {'id': '1', 'name': 'John', 'age': '30'},
-            {'id': '2', 'name': 'Jane', 'age': '25'}
-        ]
-    }
-    reporter = SQLReporter(dataset)
-    query = 'INVALID QUERY'
-    try:
-        reporter.execute_query(query)
-        assert False, 'Expected ValueError'
-    except ValueError as e:
-        assert str(e) == 'Unsupported query'
+        assert str(e) == "Report not found"
